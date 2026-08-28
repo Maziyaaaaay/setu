@@ -11,8 +11,10 @@ Solo builder. Deadline: 28 Aug 2026, 8:00 PM IST.
 
 ## Live link
 
-**https://setu-india.netlify.app**
+**https://setu-blond-eight.vercel.app**
 (public, no login wall; opens straight into the citizen journey)
+
+Backup deploy: https://setu-india.netlify.app
 
 Mock credentials for the practice application step (shown pre-filled on screen):
 `anjali.demo@setu.test` / `demo1234` — these connect to nothing.
@@ -111,8 +113,9 @@ vs "backup plan"; and a "What is real in this demo" panel on the scale screen.
 
 ## Submission-form checklist
 
-- [x] Deployed: https://setu-india.netlify.app — public, opens with no access request
-- [x] AI planner live via Netlify AI Gateway; plan shows green "made by AI just now" tag
+- [x] Deployed: https://setu-blond-eight.vercel.app — public, opens with no access request
+- [x] AI planner live (OpenAI via your key on Vercel); plan shows green "made by AI just now" tag
+- [x] Backup deploy also live: https://setu-india.netlify.app
 - [ ] Walked the full flow once in an incognito window (do this right before submitting)
 - [ ] Walked the full flow once in an incognito window
 - [ ] Video (≤ 2:00) recorded and uploaded to a public link (Loom / unlisted YouTube)
