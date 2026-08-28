@@ -34,6 +34,20 @@ function timingText() {
     : 'with no fixed date';
 }
 
+/* ---------- icons (stroke, currentColor) ---------- */
+
+const svg = (p, w = 1.8) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const ICONS = {
+  home: svg('<path d="M3 10.6 12 3.5l9 7.1"/><path d="M5.2 9.4V20a1 1 0 0 0 1 1H17.8a1 1 0 0 0 1-1V9.4"/>'),
+  plan: svg('<rect x="4.5" y="3" width="15" height="18" rx="2.2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4.5"/>'),
+  info: svg('<circle cx="12" cy="12" r="8.6"/><path d="M12 11v5.2M12 7.6h.01"/>'),
+  check: svg('<path d="m4.5 12.5 5 5 10-11"/>', 2.2),
+  alert: svg('<path d="M12 3.6 2.6 20h18.8L12 3.6Z"/><path d="M12 10v4.6M12 17.6h.01"/>'),
+  arrow: svg('<path d="M5 12h13M12 5.5 18.5 12 12 18.5"/>', 2),
+  dot: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>'
+};
+
 /* ---------- shell ---------- */
 
 const layout = (body) => `<div class="app">
@@ -42,9 +56,40 @@ const layout = (body) => `<div class="app">
   <footer class="disclaimer">AI-written guidance · Practice screens and made-up data · Not linked to UMANG or any government body</footer>
 </div>`;
 
+/* focus the new screen's heading, reset scroll, sync the header shadow */
+function afterRender() {
+  const page = app.querySelector('.page');
+  if (!page) return;
+  const h = page.querySelector('h1, h2') || page.querySelector('.eyebrow');
+  if (h) { h.setAttribute('tabindex', '-1'); try { h.focus({ preventScroll: true }); } catch { h.focus(); } }
+  window.scrollTo(0, 0);
+  syncHeader();
+}
+function syncHeader() {
+  const top = app.querySelector('.top');
+  if (top) top.classList.toggle('scrolled', window.scrollY > 4);
+}
+new MutationObserver(afterRender).observe(app, { childList: true });
+window.addEventListener('scroll', syncHeader, { passive: true });
+
+/* a numbered token, or an icon token */
+function feat(mark, title, body) {
+  const inner = /^\d+$/.test(mark) ? mark : (ICONS[mark] || '');
+  return `<div class="feature"><span class="fi">${inner}</span><span><b>${title}</b><br>${body}</span></div>`;
+}
+
+const FLOW = ['documents', 'planScreen', 'login', 'request', 'tracking'];
+function progress(cur) {
+  const i = FLOW.indexOf(cur);
+  if (i < 0) return '';
+  return `<div class="steps" role="group" aria-label="Step ${i + 1} of ${FLOW.length}">` +
+    FLOW.map((_, n) => `<span class="${n <= i ? 'on' : ''}"></span>`).join('') + `</div>`;
+}
+
 function nav(active) {
-  const b = (k, i, l) => `<button class="${active === k ? 'active' : ''}" data-nav="${k}"><b>${i}</b>${l}</button>`;
-  return `<nav class="nav">${b('home', '⌂', 'Home')}${b('dash', '▣', 'My plan')}${b('help', '?', 'About')}</nav>`;
+  const item = (k, ic, l) =>
+    `<button data-nav="${k}" class="${active === k ? 'active' : ''}"${active === k ? ' aria-current="page"' : ''} aria-label="${l}">${ICONS[ic]}<span>${l}</span></button>`;
+  return `<nav class="nav" aria-label="Sections">${item('home', 'home', 'Home')}${item('dash', 'plan', 'My plan')}${item('help', 'info', 'About')}</nav>`;
 }
 function bindNav() {
   document.querySelectorAll('[data-nav]').forEach((x) => {
@@ -77,7 +122,7 @@ function purposeOptions() {
 function home() {
   const resume = state.plan
     ? `<div class="next"><b>Your saved plan</b><p>${svc().label} · ${timingText()}</p>
-        <button class="text" id="resume">Open it →</button></div>`
+        <button class="text" id="resume">Open it</button></div>`
     : '';
 
   app.innerHTML = layout(`
@@ -89,19 +134,19 @@ function home() {
     ${resume}
     <div class="card">
       <h3>Tell Setu what you need</h3>
-      <p class="sub" style="font-size:14px;margin-top:2px">Pick what you need. Setu makes the plan.</p>
+      <p class="sub">Pick what you need. Setu makes the plan.</p>
       <div class="field">
-        <label>What do you need?</label>
+        <label for="service">What do you need?</label>
         <select id="service">${groupedOptions()}</select>
         <small id="svcNote">Where this is done: ${svc().portal}</small>
       </div>
       <div class="field">
-        <label>Why do you need it?</label>
+        <label for="purpose">Why do you need it?</label>
         <select id="purpose">${purposeOptions()}</select>
         <small>This helps Setu make a better plan.</small>
       </div>
       <div class="field">
-        <label>When do you need it?</label>
+        <label for="time">When do you need it?</label>
         <select id="time">
           <option value="no-deadline"${state.timing === 'no-deadline' ? ' selected' : ''}>No fixed date</option>
           <option value="within-week"${state.timing === 'within-week' ? ' selected' : ''}>Within 7 days</option>
@@ -109,16 +154,16 @@ function home() {
           <option value="exact"${state.timing === 'exact' ? ' selected' : ''}>Pick a date</option>
         </select>
         <div id="dateWrap" class="${state.timing === 'exact' ? '' : 'hidden'}">
-          <label style="margin-top:12px">Which date?</label>
+          <label for="date" style="margin-top:12px">Which date?</label>
           <input id="date" type="date" value="${state.date || ''}">
         </div>
       </div>
-      <button class="btn" id="start">Make my plan →</button>
+      <button class="btn" id="start">Make my plan</button>
     </div>
     <div class="card">
-      <div class="feature"><i>1</i><span><b>Know where to go</b><br>Online, at a help centre, or in person — Setu tells you which.</span></div>
-      <div class="feature"><i>2</i><span><b>Bring the right documents</b><br>With the reason for each one, and the mistake to avoid.</span></div>
-      <div class="feature"><i>3</i><span><b>Always know the next step</b><br>If something gets stuck, Setu tells you how to fix it.</span></div>
+      ${feat('1', 'Know where to go', 'Online, at a help centre, or in person — Setu tells you which.')}
+      ${feat('2', 'Bring the right documents', 'With the reason for each one, and the mistake to avoid.')}
+      ${feat('3', 'Always know the next step', 'If something gets stuck, Setu tells you how to fix it.')}
     </div>
     ${nav('home')}`);
 
@@ -141,7 +186,7 @@ function home() {
 
 function loading() {
   app.innerHTML = layout(`
-    <div class="loading">
+    <div class="loading" role="status">
       <div class="spinner"></div>
       <b>Setu is making your plan…</b>
       <p class="sub">Working out your steps, documents, and what to do if something goes wrong.</p>
@@ -238,11 +283,11 @@ function dashboard() {
     <div class="next">
       <b>${p.route[0].title}</b>
       <p>${p.route[0].detail}</p>
-      <button class="text" id="docs">Check my documents →</button>
+      <button class="text" id="docs">Check my documents</button>
     </div>
     <div class="card">
       <h3>The full plan</h3>
-      <p class="sub" style="margin-top:2px;font-size:13px">How long this usually takes: ${p.timeframe}</p>
+      <p class="sub">How long this usually takes: ${p.timeframe}</p>
       ${routeTimeline(p.route)}
     </div>
     ${nav('dash')}`);
@@ -255,13 +300,14 @@ function dashboard() {
 function documents() {
   const p = state.plan;
   app.innerHTML = layout(`
+    ${progress('documents')}
     <div class="eyebrow">Where this is done: ${svc().portal}</div>
     <h2>Check your documents</h2>
     <p class="sub">Tap the ones you already have. Setu remembers them for you.</p>
     <div class="card">
       ${p.documents.map((d, i) => `
-        <button class="doc ${state.docsReady[d.name] ? 'ready' : ''}" data-i="${i}">
-          <span class="check">✓</span>
+        <button class="doc ${state.docsReady[d.name] ? 'ready' : ''}" data-i="${i}" aria-pressed="${!!state.docsReady[d.name]}">
+          <span class="check">${ICONS.check}</span>
           <span>
             <strong>${d.name}</strong>
             <small>${d.why}</small>
@@ -271,8 +317,8 @@ function documents() {
         </button>`).join('')}
     </div>
     <div class="next"><b>Why this helps</b><p>You find out about a missing document now — not after standing in a queue.</p></div>
-    <button class="btn" id="next">See what to do →</button>
-    <button class="text" id="back">← Back</button>`);
+    <button class="btn" id="next">See what to do</button>
+    <button class="text back" id="back">Back</button>`);
   document.querySelectorAll('[data-i]').forEach((b) => {
     b.onclick = () => {
       const n = p.documents[+b.dataset.i].name;
@@ -291,6 +337,7 @@ function planScreen() {
   const p = state.plan;
   const missing = p.documents.filter((d) => !state.docsReady[d.name]);
   app.innerHTML = layout(`
+    ${progress('planScreen')}
     <div class="case">
       <div class="over">What to do</div>
       <h2>${svc().label}</h2>
@@ -298,8 +345,8 @@ function planScreen() {
     </div>
     <div class="card">
       <div class="timeline">
-        <div class="event done"><span class="dot">✓</span><div><strong>Plan ready</strong><p>Your goal, date and documents are saved.</p></div></div>
-        <div class="event now"><span class="dot">!</span><div>
+        <div class="event done"><span class="dot">${ICONS.check}</span><div><strong>Plan ready</strong><p>Your goal, date and documents are saved.</p></div></div>
+        <div class="event now"><span class="dot">${ICONS.dot}</span><div>
           <strong>${missing.length ? 'Get the missing documents' : 'Ready to apply'}</strong>
           <p>${missing.length ? 'You still need: ' + missing.map((m) => m.name).join(', ') + '.' : 'Go to the next step.'}</p>
         </div></div>
@@ -308,8 +355,8 @@ function planScreen() {
       </div>
     </div>
     <div class="card"><h3>Things that go wrong</h3><ul class="pitfalls">${p.pitfalls.map((x) => `<li>${x}</li>`).join('')}</ul></div>
-    <button class="btn" id="go">Try the practice application →</button>
-    <button class="text" id="back">← Change my documents</button>`);
+    <button class="btn" id="go">Try the practice application</button>
+    <button class="text back" id="back">Change my documents</button>`);
   q('#go').onclick = login;
   q('#back').onclick = documents;
 }
@@ -318,16 +365,17 @@ function planScreen() {
 
 function login() {
   app.innerHTML = layout(`
+    ${progress('login')}
     <div class="eyebrow">Practice — not the real website</div>
     <h2>Sign in</h2>
     <p class="sub">This is a practice screen. Do not type a real password, OTP, Aadhaar or any real detail.</p>
     <div class="card">
-      <div class="field"><label>Practice email</label><input value="anjali.demo@setu.test"></div>
-      <div class="field"><label>Practice password</label><input type="password" value="demo1234"></div>
-      <div class="objective" style="margin:12px 0"><b>Practice only</b><p>These boxes are not connected to any government website.</p></div>
-      <button class="btn" id="in">Continue →</button>
+      <div class="field"><label for="pe">Practice email</label><input id="pe" value="anjali.demo@setu.test"></div>
+      <div class="field"><label for="pp">Practice password</label><input id="pp" type="password" value="demo1234"></div>
+      <div class="objective"><b>Practice only</b><p>These boxes are not connected to any government website.</p></div>
+      <button class="btn" id="in">Continue</button>
     </div>
-    <button class="text" id="back">← Back</button>`);
+    <button class="text back" id="back">Back</button>`);
   q('#in').onclick = request;
   q('#back').onclick = planScreen;
 }
@@ -336,17 +384,18 @@ function request() {
   const p = state.plan, s = svc();
   const ready = Object.values(state.docsReady).filter(Boolean).length;
   app.innerHTML = layout(`
+    ${progress('request')}
     <div class="eyebrow">Practice application</div>
     <h2>Check before you send</h2>
     <p class="sub">Setu fills in what it already knows.</p>
     <div class="card">
-      <div class="feature"><i>✓</i><span><b>Service</b><br>${s.label}</span></div>
-      <div class="feature"><i>✓</i><span><b>What you need it for</b><br>${state.purpose || 'General'} · ${timingText()}</span></div>
-      <div class="feature"><i>✓</i><span><b>Documents</b><br>${ready} of ${p.documents.length} marked as ready</span></div>
+      ${feat('check', 'Service', s.label)}
+      ${feat('check', 'What you need it for', `${state.purpose || 'General'} · ${timingText()}`)}
+      ${feat('check', 'Documents', `${ready} of ${p.documents.length} marked as ready`)}
     </div>
     <div class="next"><b>Before you send</b><p>This only makes a practice tracking number. Nothing is sent anywhere.</p></div>
-    <button class="btn" id="submit">Send practice application →</button>
-    <button class="text" id="back">← Back</button>`);
+    <button class="btn" id="submit">Send practice application</button>
+    <button class="text back" id="back">Back</button>`);
   q('#submit').onclick = tracking;
   q('#back').onclick = login;
 }
@@ -354,6 +403,7 @@ function request() {
 function tracking() {
   const s = svc();
   app.innerHTML = layout(`
+    ${progress('tracking')}
     <div class="case">
       <div class="over">Practice application sent</div>
       <h2>SETU-260828-1842</h2>
@@ -362,14 +412,14 @@ function tracking() {
     <div class="top-row"><h2>Track your application</h2><span class="pill">Being checked</span></div>
     <div class="card">
       <div class="timeline">
-        <div class="event done"><span class="dot">✓</span><div><strong>Application sent</strong><p>Your details and document list were received.</p></div></div>
-        <div class="event now"><span class="dot">!</span><div><strong>Documents being checked</strong><p>This stays in the same plan as your goal.</p></div></div>
+        <div class="event done"><span class="dot">${ICONS.check}</span><div><strong>Application sent</strong><p>Your details and document list were received.</p></div></div>
+        <div class="event now"><span class="dot">${ICONS.dot}</span><div><strong>Documents being checked</strong><p>This stays in the same plan as your goal.</p></div></div>
         <div class="event"><span class="dot">3</span><div><strong>Result</strong><p>When it’s done, your plan shows the next step.</p></div></div>
       </div>
     </div>
     <div class="next"><b>See how Setu helps if something goes wrong</b><p>Try it: a document problem.</p>
-      <button class="text" id="issue">Show a document problem →</button></div>
-    <button class="btn secondary" id="finish">Finish →</button>`);
+      <button class="text" id="issue">Show a document problem</button></div>
+    <button class="btn secondary" id="finish">Finish</button>`);
   q('#issue').onclick = recovery;
   q('#finish').onclick = complete;
 }
@@ -384,10 +434,10 @@ function recovery() {
       <span class="status missing">NEEDS ACTION</span>
       <h3 style="margin-top:12px">${r.item}</h3>
       <p class="sub" style="font-size:14px">${r.what}</p>
-      <div class="feature"><i>1</i><span><b>What to do</b><br>${r.where}</span></div>
-      <div class="feature"><i>2</i><span><b>After that</b><br>${r.after}</span></div>
+      ${feat('1', 'What to do', r.where)}
+      ${feat('2', 'After that', r.after)}
     </div>
-    <button class="btn" id="done">Mark as fixed →</button>`);
+    <button class="btn" id="done">Mark as fixed</button>`);
   q('#done').onclick = complete;
 }
 
@@ -402,12 +452,12 @@ function complete() {
     </div>
     <div class="card">
       <h3>What Setu changes</h3>
-      <div class="feature"><i>!</i><span><b>Before</b><br>You search across many websites, offices and rules to piece it together.</span></div>
-      <div class="feature"><i>→</i><span><b>With Setu</b><br>One plan: your goal, the date, the documents, where to go, and how to fix problems.</span></div>
-      <div class="feature"><i>✓</i><span><b>Result</b><br>You always know the next step.</span></div>
+      ${feat('alert', 'Before', 'You search across many websites, offices and rules to piece it together.')}
+      ${feat('arrow', 'With Setu', 'One plan: your goal, the date, the documents, where to go, and how to fix problems.')}
+      ${feat('check', 'Result', 'You always know the next step.')}
     </div>
-    <button class="btn" id="scale">See how this would work for real →</button>
-    <button class="text" id="again">Start again →</button>`);
+    <button class="btn" id="scale">See how this would work for real</button>
+    <button class="text" id="again">Start again</button>`);
   q('#scale').onclick = scale;
   q('#again').onclick = reset;
 }
@@ -418,17 +468,17 @@ function scale() {
     <h2>Setu sits on top.<br>It doesn’t replace anything.</h2>
     <p class="sub">Setu guides you. The government websites still do the real work.</p>
     <div class="card">
-      <div class="feature"><i>1</i><span><b>Signing in</b><br>You sign in with UMANG or DigiLocker. Setu never sees your password.</span></div>
-      <div class="feature"><i>2</i><span><b>Documents</b><br>Setu checks your DigiLocker documents with your permission, then forgets them.</span></div>
-      <div class="feature"><i>3</i><span><b>Applying</b><br>Your application goes to the real website — eDistrict, EPFO, Parivahan — through official links (API Setu).</span></div>
-      <div class="feature"><i>4</i><span><b>Status</b><br>The status comes back from the government office. A stuck case can be raised on CPGRAMS.</span></div>
-      <div class="feature"><i>5</i><span><b>In-person help</b><br>A help centre (CSC) can do the same steps with you.</span></div>
+      ${feat('1', 'Signing in', 'You sign in with UMANG or DigiLocker. Setu never sees your password.')}
+      ${feat('2', 'Documents', 'Setu checks your DigiLocker documents with your permission, then forgets them.')}
+      ${feat('3', 'Applying', 'Your application goes to the real website — eDistrict, EPFO, Parivahan — through official links (API Setu).')}
+      ${feat('4', 'Status', 'The status comes back from the government office. A stuck case can be raised on CPGRAMS.')}
+      ${feat('5', 'In-person help', 'A help centre (CSC) can do the same steps with you.')}
     </div>
     <div class="objective">
       <b>What is real in this demo</b>
       <p>The journey and the AI plan are real and work now. Signing in, sending the application, and the status updates are practice screens with made-up data. No government website is contacted.</p>
     </div>
-    <button class="btn" id="again">Start again →</button>`);
+    <button class="btn" id="again">Start again</button>`);
   q('#again').onclick = reset;
 }
 
@@ -437,9 +487,9 @@ function help() {
     <div class="eyebrow">About Setu</div>
     <h2>What Setu does</h2>
     <div class="card">
-      <div class="feature"><i>?</i><span><b>It makes a plan</b><br>Tell Setu what you need. It gives you the steps, the documents, where to go, and how to fix problems.</span></div>
-      <div class="feature"><i>?</i><span><b>It does not decide anything</b><br>Setu never approves or rejects anything. It never asks for your Aadhaar, OTP or password.</span></div>
-      <div class="feature"><i>?</i><span><b>It can help in person</b><br>For real, a help centre (CSC) could do the steps with you.</span></div>
+      ${feat('info', 'It makes a plan', 'Tell Setu what you need. It gives you the steps, the documents, where to go, and how to fix problems.')}
+      ${feat('info', 'It does not decide anything', 'Setu never approves or rejects anything. It never asks for your Aadhaar, OTP or password.')}
+      ${feat('info', 'It can help in person', 'For real, a help centre (CSC) could do the steps with you.')}
     </div>
     <p class="sub">An independent demo made for the Build What Moves India hackathon. Made-up data, practice screens, AI-written guidance.</p>
     ${nav('help')}`);
