@@ -1,0 +1,14 @@
+# local / editor
+.DS_Store
+
+# old drafts and scratch (kept out of the repo)
+outputs/
+work/
+
+# netlify local state + deps
+.netlify/
+node_modules/
+
+# secrets (never commit — the OpenAI key is a Netlify env var)
+.env
+.env.*
