@@ -3,6 +3,8 @@
 Rules recap: **max 2:00**. Minute 1 = demo as a citizen. Minute 2 = how you built
 it and why. A public link (Loom or unlisted YouTube). You present (solo).
 
+Live site to record: **https://setu-india.netlify.app**
+
 Aim for **1:45**. Judges watch a lot of these — a tight 1:45 that never drags beats
 a full 2:00. Record the screen at a phone width (~400px) so it reads as mobile.
 

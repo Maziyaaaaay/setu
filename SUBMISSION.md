@@ -11,10 +11,10 @@ Solo builder. Deadline: 28 Aug 2026, 8:00 PM IST.
 
 ## Live link
 
-Production: https://helpful-pegasus-71571d.netlify.app
-(no login wall; opens straight into the citizen journey)
+**https://setu-india.netlify.app**
+(public, no login wall; opens straight into the citizen journey)
 
-Mock credentials for the simulated official-service step (shown pre-filled on screen):
+Mock credentials for the practice application step (shown pre-filled on screen):
 `anjali.demo@setu.test` / `demo1234` — these connect to nothing.
 
 ---
@@ -111,9 +111,9 @@ vs "backup plan"; and a "What is real in this demo" panel on the scale screen.
 
 ## Submission-form checklist
 
-- [ ] OpenAI billing topped up; key created and tested (`DEPLOY.md` step 1)
-- [ ] `npx netlify-cli login` done, then `./deploy.sh` run; live link opens with no access request
-- [ ] Plan shows the green "made by AI just now" tag (not amber "backup plan")
+- [x] Deployed: https://setu-india.netlify.app — public, opens with no access request
+- [x] AI planner live via Netlify AI Gateway; plan shows green "made by AI just now" tag
+- [ ] Walked the full flow once in an incognito window (do this right before submitting)
 - [ ] Walked the full flow once in an incognito window
 - [ ] Video (≤ 2:00) recorded and uploaded to a public link (Loom / unlisted YouTube)
 - [ ] Summary pasted (under 250 words)

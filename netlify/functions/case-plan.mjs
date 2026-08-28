@@ -17,7 +17,9 @@ The reader is on a phone and may not have done this online before.
 
 Language rules (important):
 - Use short, everyday words. Aim for a 12-year-old reader. Sentences under 15 words.
-- No jargon and no formal or bureaucratic words. Say "papers you need" not "requisite documentation", "check" not "verification", "office" not "competent authority". Real names of websites and schemes are fine (EPFO, eDistrict, DigiLocker, PAN, UAN).
+- Write titles and text in sentence case, not Title Case. "Prepare your documents", not "Prepare Your Documents".
+- Say "documents", not "papers". Say "check", not "verification". Say "office", not "competent authority". Real names of websites and schemes are fine (EPFO, eDistrict, DigiLocker, PAN, UAN).
+- No jargon and no formal or bureaucratic words.
 - Do not state an exact fee, an exact number of days, a form number, a law section or an office name as a hard fact. Say "usually" or "about", and tell the reader to check the official website named.
 - Never ask for a real Aadhaar number, OTP, password, or bank or card detail.
 
@@ -81,10 +83,16 @@ const SCHEMA = {
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } });
 
-export default async (req) => {
-  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+const API_BASE = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
 
+export default async (req) => {
   const key = process.env.OPENAI_API_KEY;
+
+  if (req.method === 'GET') {
+    // health check — no secret is returned
+    return json({ ok: true, provider_configured: !!key, model: MODEL });
+  }
+  if (req.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
 
   let body;
   try {
@@ -109,7 +117,7 @@ export default async (req) => {
   ].join('\n');
 
   try {
-    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+    const r = await fetch(`${API_BASE}/chat/completions`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
       body: JSON.stringify({

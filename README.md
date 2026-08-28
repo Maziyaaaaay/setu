@@ -3,6 +3,8 @@
 A mobile-first "life-event layer" for Indian public-service journeys, built for the
 **Build What Moves India** hackathon (Varun Mayya × OpenAI).
 
+**Live: https://setu-india.netlify.app**
+
 A citizen states one goal; an OpenAI model turns it into one case — a plain-language
 plan, a document checklist with reasons and common mistakes, the right route
 (online / assisted / verification), a timeframe, and a recovery path.
@@ -40,8 +42,9 @@ npx netlify-cli dev            # http://localhost:8888  — needs OPENAI_API_KEY
 
 ## Deploy
 
-See `DEPLOY.md`. Short version: `npx netlify-cli login`, then
-`export OPENAI_API_KEY=sk-...` and `./deploy.sh`.
+Already live at https://setu-india.netlify.app. To redeploy after a change:
+`npx netlify-cli deploy --prod --dir site` (or `./deploy.sh`). The AI planner is
+powered by the Netlify AI Gateway — no OpenAI key needs to be set. See `DEPLOY.md`.
 
 ## Submission
 
